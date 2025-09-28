@@ -8,6 +8,9 @@ Endpoints:
 from fastapi import FastAPI, UploadFile, Form
 import shutil
 from pathlib import Path
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent))
 
 from ingest_finance import ingest
 from query_pipeline import run_query
@@ -16,14 +19,45 @@ from logger import get_logger
 app = FastAPI(title="FinRAG API")
 logger = get_logger(__name__)
 
+from pydantic import BaseModel
+
+class QueryRequest(BaseModel):
+    query: str
+    backend: str = "faiss"
+    llm: str = "distilgpt2"
+    k: int = 5
+import math
+
+def clean_metadata(md: dict):
+    """Remove NaN/None values to make JSON-safe metadata."""
+    cleaned = {}
+    for k, v in md.items():
+        if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
+            continue
+        if v is None:
+            continue
+        cleaned[k] = v
+    return cleaned
 
 @app.post("/query")
-async def query_endpoint(query: str, backend: str = "faiss", llm: str = "gpt-4o-mini", k: int = 5):
+async def query_endpoint(request: QueryRequest):
     try:
-        result = run_query(query, "./data/index", backend, llm, k)
-        return {"query": query, "answer": result["result"], "sources": [d.metadata for d in result["source_documents"]]}
+        result = run_query(request.query, "./data/index", request.backend, request.llm, request.k)
+
+        sources = []
+        for d in result.get("source_documents", []):
+            if isinstance(d, dict):
+                sources.append(clean_metadata(d.get("metadata", {})))
+            else:  # LangChain Document
+                sources.append(clean_metadata(d.metadata))
+
+        return {
+            "query": request.query,
+            "answer": result["result"],
+            "sources": sources,
+        }
     except Exception as e:
-        logger.error(f"Query failed: {e}")
+        logger.exception("Query failed")
         return {"error": str(e)}
 
 

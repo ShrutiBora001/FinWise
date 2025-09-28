@@ -67,13 +67,34 @@ def serialize_result(result):
             {"page_content": d.page_content, "metadata": d.metadata} for d in docs
         ]
     return result
+def _make_key(self, query: str, backend="faiss", llm_model="distilgpt2", k=5):
+    key_string = f"{query}:{backend}:{llm_model}:{k}"
+    return hashlib.md5(key_string.encode("utf-8")).hexdigest()
+
 
 def run_query(query, index_dir, backend="faiss", llm_model="distilgpt2", k=5, use_cache=True):
+    """
+    Runs a query against the RAG pipeline with optional caching.
+
+    Args:
+        query (str): The question to ask.
+        index_dir (str): Path to the vector store index.
+        backend (str): 'faiss' or 'chroma'.
+        llm_model (str): LLM model to use for answer generation.
+        k (int): Number of documents to retrieve.
+        use_cache (bool): Whether to use caching.
+
+    Returns:
+        dict: {'result': answer, 'source_documents': [...]}
+    """
     cache = Cache()
-    
+
+    # Generate a stable cache key
+    cache_key = cache._make_key(query, backend, llm_model, k)
+
     # Try retrieving from cache
     if use_cache:
-        cached = cache.get(query)
+        cached = cache.get(cache_key)
         if cached:
             logger.info(f"Cache hit for query: {query}")
             return cached
@@ -90,12 +111,14 @@ def run_query(query, index_dir, backend="faiss", llm_model="distilgpt2", k=5, us
                 {"page_content": doc.page_content, "metadata": doc.metadata} 
                 for doc in result_to_cache["source_documents"]
             ]
-        cache.set(query, result_to_cache)
+        cache.set(cache_key, result_to_cache)
+        logger.info(f"Cache miss → stored result for query: {query}")
 
     logger.info(f"Query: {query}")
     logger.info(f"Answer: {result['result']}")
-    
+
     return result
+
 
 
 if __name__ == "__main__":

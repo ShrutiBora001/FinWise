@@ -25,8 +25,9 @@ class Cache:
                 with open(cache_file, "w") as f:
                     json.dump({}, f)
 
-    def _make_key(self, query: str):
-        return hashlib.md5(query.encode("utf-8")).hexdigest()
+    def _make_key(self, query: str, backend="faiss", llm_model="distilgpt2", k=5):
+        key_string = f"{query}:{backend}:{llm_model}:{k}"
+        return hashlib.md5(key_string.encode("utf-8")).hexdigest()
 
     def get(self, query: str):
         key = self._make_key(query)

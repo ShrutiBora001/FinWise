@@ -40,7 +40,7 @@ def generate_answer_openai(prompt, openai_api_key, max_tokens=300):
     # Keep this simple: use chat completion if available
     try:
         resp = openai.ChatCompletion.create(
-            model="gpt-4o-mini" if True else "gpt-4o",
+            model="sentence-transformers/all-MiniLM-L6-v2" if True else "gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=max_tokens,
             temperature=0.2,
