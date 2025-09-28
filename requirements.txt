@@ -133,3 +133,5 @@ wrapt==1.17.3
 yarl==1.20.1
 yfinance==0.2.66
 zstandard==0.25.0
+langchain-community
+langchain-huggingface

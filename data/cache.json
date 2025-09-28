@@ -1,0 +1,16 @@
+{
+  "434bb8e2ab2c14d3b224ee20369332d9": {
+    "query": "What is Apple's latest product launch?",
+    "result": "Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.\n\nnan\n\nQuestion: What is Apple's latest product launch?\nHelpful Answer: If you have any questions, just tell us!\nThe answers to this question are typically from customers who have heard about Apple's latest product launch. The most common question in the answers is: Why should you buy the latest iPhone?\nThis question is often asked by customers who have been very skeptical of the iPhone's launch because of its lack of hardware. If you have a great iPhone, you might want to learn more about the iPhone's hardware. Unfortunately, this is not the case.\nThe most common question is: Are you still looking for something new?\nThis question is more common because of the fact that the Apple store is a highly regulated, and extremely expensive store.\nIt is very common for customers to have a lot of items on their hands, even in the beginning. If you are not happy with the iPhone, you may want to try buying new iPhone accessories at a lower cost.\nThis is why the Apple store is a highly regulated, and extremely expensive store. If you have a great iPhone, you might want to try buying new iPhone accessories at a lower cost.\nWhen you buy a new iPhone accessories, the iPhone should be very much a part of the store. If you have a great iPhone, you might want to try buying new",
+    "source_documents": [
+      {
+        "page_content": "nan",
+        "metadata": {
+          "date": NaN,
+          "source": NaN,
+          "ticker": "AAPL"
+        }
+      }
+    ]
+  }
+}
