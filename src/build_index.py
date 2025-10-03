@@ -10,6 +10,7 @@ from langchain.schema import Document
 
 from utils import env, ensure_dir, init_metadata_db, store_metadata
 
+
 def build(jsonl_path, index_dir, model_name="all-MiniLM-L6-v2", db_path="./data/metadata.db"):
     """
     Build a FAISS vectorstore index from a JSONL file with text documents.

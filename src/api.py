@@ -5,16 +5,23 @@ Endpoints:
 - /query: ask a question
 - /ingest: ingest new data file (CSV or JSONL)
 """
+
 from fastapi import FastAPI, UploadFile, Form
 import shutil
 from pathlib import Path
+
 import sys
 from pathlib import Path
+
+# Add src folder to path
 sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).parent.resolve()))
+
 
 from ingest_finance import ingest
 from query_pipeline import run_query
 from logger import get_logger
+
 
 app = FastAPI(title="FinRAG API")
 logger = get_logger(__name__)
@@ -39,6 +46,8 @@ def clean_metadata(md: dict):
         cleaned[k] = v
     return cleaned
 
+
+
 @app.post("/query")
 async def query_endpoint(request: QueryRequest):
     try:
@@ -61,16 +70,25 @@ async def query_endpoint(request: QueryRequest):
         return {"error": str(e)}
 
 
+
 @app.post("/ingest")
-async def ingest_endpoint(file: UploadFile, out: str = "./data/ingested.jsonl"):
+async def ingest_endpoint(file: UploadFile, out: str = "./data/ingested.jsonl", index_dir: str = "./data/index"):
     try:
         temp_path = Path(f"./data/uploads/{file.filename}")
         temp_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Save uploaded file
         with open(temp_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
+        # Run ingestion
         ingest(str(temp_path), out)
-        return {"status": "success", "output": out}
+
+        # Build index automatically
+        from build_index import build  # import here to avoid circular issues
+        build(out, index_dir)
+
+        return {"status": "success", "output": out, "index_dir": index_dir}
     except Exception as e:
         logger.error(f"Ingestion failed: {e}")
         return {"error": str(e)}

@@ -136,3 +136,4 @@ zstandard==0.25.0
 langchain-community
 langchain-huggingface
 python-multipart
+pytest

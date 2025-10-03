@@ -1,0 +1,27 @@
+services:
+  api:
+    build: .
+    container_name: finrag_api
+    command: uvicorn src.api:app --host 0.0.0.0 --port 8000 --reload
+    working_dir: /app
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./src:/app/src
+
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+
+  ingest:
+    build: .
+    container_name: finrag_ingest
+    command: >
+      sh -c "
+      python src/ingest_finance.py --input /app/data/aapl_news.csv --out /app/data/ingested.jsonl &&
+      python src/build_index.py --jsonl /app/data/ingested.jsonl --index-dir /app/data/index
+      "
+    volumes:
+      - ./data:/app/data
+      - ./src:/app/src

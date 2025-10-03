@@ -10,8 +10,6 @@ from langchain.chains import RetrievalQA
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from transformers import pipeline
 from langchain_huggingface import HuggingFacePipeline
-from langchain.vectorstores import FAISS  # note: not langchain_community
-from langchain.embeddings import HuggingFaceEmbeddings
 
 
 from utils import env
@@ -72,7 +70,7 @@ def _make_key(self, query: str, backend="faiss", llm_model="distilgpt2", k=5):
     return hashlib.md5(key_string.encode("utf-8")).hexdigest()
 
 
-def run_query(query, index_dir, backend="faiss", llm_model="distilgpt2", k=5, use_cache=True):
+def run_queryprev(query, index_dir, backend="faiss", llm_model="distilgpt2", k=5, use_cache=True):
     """
     Runs a query against the RAG pipeline with optional caching.
 
@@ -119,6 +117,62 @@ def run_query(query, index_dir, backend="faiss", llm_model="distilgpt2", k=5, us
 
     return result
 
+
+def run_query(query, index_dir, backend="faiss", llm_model="distilgpt2", k=5, use_cache=True):
+    """
+    Runs a query against the RAG pipeline with optional caching.
+
+    Args:
+        query (str): The question to ask.
+        index_dir (str): Path to the vector store index.
+        backend (str): 'faiss' or 'chroma'.
+        llm_model (str): LLM model to use for answer generation.
+        k (int): Number of documents to retrieve.
+        use_cache (bool): Whether to use caching.
+
+    Returns:
+        dict: {'result': answer, 'source_documents': [...]}
+    """
+    cache = Cache()
+
+    # Generate a stable cache key (using query + backend + model + k)
+    cache_key = cache._make_key(f"{query}|{backend}|{llm_model}|{k}")
+
+    # Try retrieving from cache
+    if use_cache:
+        cached = cache.get(cache_key)
+        if cached:
+            logger.info(f"Cache hit for query: {query}")
+            return cached
+
+    # Run retrieval + LLM pipeline
+    qa = make_query_pipeline(index_dir, backend, llm_model, k)
+    result = qa.invoke(query)
+
+    # Clean metadata to remove None or NaN values and preserve document structure
+    cleaned_sources = []
+    for doc in result.get("source_documents", []):
+        cleaned_metadata = {k: v for k, v in getattr(doc, "metadata", {}).items() if v is not None and str(v).lower() != "nan"}
+        cleaned_sources.append({
+            "page_content": getattr(doc, "page_content", ""),
+            "metadata": cleaned_metadata
+        })
+
+    # Prepare the result dict
+    final_result = {
+        "result": result["result"],
+        "source_documents": cleaned_sources
+    }
+
+    # Cache the cleaned result
+    if use_cache:
+        cache.set(cache_key, final_result)
+        logger.info(f"Cache miss → stored result for query: {query}")
+
+    logger.info(f"Query: {query}")
+    logger.info(f"Answer: {result['result']}")
+
+    return final_result
 
 
 if __name__ == "__main__":
